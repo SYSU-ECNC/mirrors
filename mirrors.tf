@@ -7,14 +7,24 @@ provider "proxmox" {
   }
 }
 
+resource "proxmox_virtual_environment_file" "mirrors_cloud_image" {
+  content_type = "iso"
+  datastore_id = "local"
+  node_name = "$ECNC_MIRRORS_NODE"
+
+  source_file {
+    path = "https://mirrors.tuna.tsinghua.edu.cn/ubuntu-cloud-images/server/focal/current/focal-server-cloudimg-amd64.img"
+  }
+}
+
 resource "proxmox_virtual_environment_file" "mirrors_cloud_config" {
   content_type = "snippets"
   datastore_id = "local"
   node_name    = "$ECNC_MIRRORS_NODE"
 
   source_raw {
-    filename = "mirrors_cloud_config.cfg"
-    data = file("mirrors_cloud_config.cfg")
+    filename = "mirrors_cloud_init.conf"
+    data = file("mirrors_cloud_init.conf")
   }
 }
 
@@ -23,20 +33,21 @@ resource "proxmox_virtual_environment_vm" "mirrors_vm" {
   description = "ECNC Mirrors VM, Managed by Terraform"
 
   node_name = "$ECNC_MIRRORS_NODE"
-  vm_id     = 201
+  vm_id     = 200
 
   agent {
     enabled = true
   }
 
   cpu {
-    cores = 20
-    type = "host"  
+    cores = 24
+    type = "host"
   }
 
   disk {
     datastore_id = "local-lvm"
-    file_id      = "${proxmox_virtual_environment_file.ubuntu_cloud_image.id}"
+    file_id      = "${proxmox_virtual_environment_file.mirrors_cloud_image.id}"
+    size         = 40
   }
 
   initialization {
